@@ -1,0 +1,25 @@
+
+name: Deploy Hello World na AWS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Atualizar aplicacao na EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Conectar a EC2 e atualizar aplicacao
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/marcelo-hello-world
+            git pull origin main
+            sudo systemctl restart marcelo-hello-world
+            sudo systemctl is-active --quiet marcelo-hello-world
