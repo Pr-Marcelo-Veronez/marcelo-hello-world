@@ -33,7 +33,7 @@ jobs:
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --parameters 'commands=["sudo -u ubuntu git -C /opt/marcelo-hello-world pull --ff-only origin main && sudo systemctl restart marcelo-hello-world && sudo systemctl is-active --quiet marcelo-hello-world"]' \
+            --parameters 'commands=["sudo -u ubuntu git -C /opt/marcelo-hello-world fetch origin && sudo -u ubuntu git -C /opt/marcelo-hello-world reset --hard origin/main && sudo systemctl restart marcelo-hello-world && sudo systemctl is-active --quiet marcelo-hello-world"]' \
             --query "Command.CommandId" \
             --output text)
 
