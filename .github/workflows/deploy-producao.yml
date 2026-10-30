@@ -11,11 +11,74 @@ permissions:
   contents: read
 
 jobs:
+  notify:
+    name: Enviar aviso de aprovacao por email
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Enviar notificacao via SendGrid
+        env:
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          EMAIL_TO: prmarcelo.veronez@gmail.com
+          EMAIL_FROM: veronez@policiamilitar.sp.gov.br
+          COMMIT: ${{ github.sha }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          subject = "Aprovacao pendente - Deploy em Producao AWS"
+
+          body = f"""
+          Ola!
+
+          Existe uma nova implantacao aguardando sua aprovacao.
+
+          Repositorio: {os.environ['REPOSITORY']}
+          Commit: {os.environ['COMMIT']}
+
+          Acesse o GitHub Actions para revisar e aprovar:
+          {os.environ['RUN_URL']}
+
+          A producao somente sera atualizada depois da sua aprovacao.
+          """
+
+          payload = {
+              "personalizations": [{
+                  "to": [{"email": os.environ["EMAIL_TO"]}]
+              }],
+              "from": {"email": os.environ["EMAIL_FROM"]},
+              "subject": subject,
+              "content": [{
+                  "type": "text/plain",
+                  "value": body
+              }]
+          }
+
+          request = urllib.request.Request(
+              "https://api.sendgrid.com/v3/mail/send",
+              data=json.dumps(payload).encode("utf-8"),
+              headers={
+                  "Authorization": "Bearer " + os.environ["SENDGRID_API_KEY"],
+                  "Content-Type": "application/json"
+              },
+              method="POST"
+          )
+
+          with urllib.request.urlopen(request, timeout=30) as response:
+              print("SendGrid HTTP:", response.status)
+              if response.status != 202:
+                  raise RuntimeError("Envio de email nao confirmado")
+          PY
+
   deploy:
     name: Aguardar aprovacao e atualizar EC2 Producao
     runs-on: ubuntu-latest
+    needs: notify
 
-    # Exige aprovação no ambiente producao
     environment:
       name: producao
 
