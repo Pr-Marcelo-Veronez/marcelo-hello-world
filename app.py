@@ -29,6 +29,7 @@ class HelloHandler(BaseHTTPRequestHandler):
         <body>
             <h1>Hello World!</h1>
             <p>Desenvolvido por Marcelo Veronez - INFRA Clone OK</p>
+            <p>Ambiente: DESENVOLVIMENTO</p>
             <p>Versão do código: {hash_commit}</p>
         </body>
         </html>
