@@ -1,3 +1,66 @@
 # marcelo-hello-world
 Desafio AWS EC2 com deploy automático via GitHub Actions
-Teste de deploy automático realizado em 29/10/2026!!
+
+# Server 2 — Ambiente de Produção
+
+## Objetivo do projeto
+
+Este servidor foi criado para representar o ambiente de produção da aplicação **Marcelo Hello World**, complementando o primeiro servidor de desenvolvimento.
+
+O objetivo é demonstrar um processo de publicação mais controlado, no qual as atualizações somente são realizadas após uma aprovação manual.
+
+## Como funciona
+
+O código-fonte da aplicação permanece centralizado no GitHub, na branch `main`.
+
+Quando uma alteração é enviada para essa branch, o GitHub Actions inicia dois processos independentes: a atualização automática do ambiente de desenvolvimento e a preparação da atualização do ambiente de produção.
+
+No caso do servidor de produção, o processo funciona da seguinte maneira:
+
+1. O desenvolvedor realiza uma alteração no código e envia para a branch `main`.
+2. O GitHub Actions inicia o fluxo de publicação em produção.
+3. Antes de atualizar o servidor, o processo utiliza o SendGrid para enviar um e-mail informando que existe uma atualização aguardando aprovação.
+4. O e-mail apresenta informações sobre o repositório, a identificação da alteração (commit) e um link para acompanhar a execução no GitHub.
+5. O responsável acessa o GitHub Actions e realiza a aprovação manual da publicação no ambiente `producao`.
+6. Após a aprovação, o GitHub autentica-se na AWS por meio de OIDC e da função IAM específica para produção.
+7. O AWS Systems Manager (SSM) recebe os comandos de atualização e executa as operações no servidor EC2.
+8. O servidor atualiza os arquivos da aplicação com a versão disponível na branch `main`, reinicia o serviço e verifica se a aplicação está funcionando corretamente.
+
+**Sem a aprovação manual, a etapa de atualização do servidor de produção não é executada.**
+
+## Estrutura do servidor
+
+- **Plataforma:** Amazon Web Services (AWS).
+- **Serviço:** Amazon EC2.
+- **Sistema operacional:** Ubuntu Server.
+- **Servidor web:** Nginx.
+- **Aplicação:** Python.
+- **Serviço da aplicação:** Systemd.
+- **Automação:** GitHub Actions.
+- **Autenticação:** IAM e OIDC.
+- **Gerenciamento remoto:** AWS Systems Manager (SSM).
+- **Notificação por e-mail:** SendGrid.
+- **Controle de publicação:** GitHub Environment com aprovação manual.
+
+O Nginx recebe as requisições dos usuários pela porta HTTP 80 e encaminha essas solicitações para a aplicação Python, que funciona internamente na porta 8000.
+
+## Controle e segurança da publicação
+
+A integração entre GitHub e AWS utiliza OIDC, evitando a necessidade de armazenar chaves permanentes de acesso à AWS no repositório.
+
+A função IAM específica para produção possui permissões limitadas às operações necessárias para atualizar o servidor por meio do SSM.
+
+O ambiente `producao` utiliza uma etapa de aprovação manual, permitindo que o responsável avalie a atualização antes de autorizar sua execução.
+
+O SendGrid é utilizado exclusivamente para enviar a notificação por e-mail sobre a publicação pendente.
+
+## Resultado
+
+Com essa estrutura, o projeto possui dois ambientes distintos:
+
+- **Desenvolvimento (Server 1):** recebe automaticamente as atualizações enviadas para a branch `main`.
+- **Produção (Server 2):** recebe as atualizações somente depois da aprovação manual pelo GitHub.
+
+Dessa forma, o projeto demonstra na prática como implementar um processo básico de CI/CD com separação de ambientes, autenticação segura, gerenciamento remoto de servidores Linux e controle de publicação em produção.
+
+**Importante:** Este ambiente representa uma simulação de produção para fins de aprendizado e demonstração. Ele não contempla, necessariamente, todos os recursos de alta disponibilidade, monitoramento, backup e proteção esperados de um ambiente corporativo definitivo.
